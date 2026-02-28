@@ -3,7 +3,6 @@
 Panduan ini untuk deploy production memakai file:
 - `docker-compose.prod.yml`
 - `Dockerfile.prod`
-- `deploy/nginx/default.conf`
 
 ## 1) Prasyarat VPS
 
@@ -84,13 +83,53 @@ Verifikasi:
 
 ```bash
 docker compose -f docker-compose.prod.yml ps
-docker compose -f docker-compose.prod.yml logs --tail=100 nginx
 docker compose -f docker-compose.prod.yml logs --tail=100 app
 ```
 
 ## 5) TLS/HTTPS
 
-Disarankan terminasi SSL di reverse proxy host (Nginx/Caddy/Traefik) yang forward ke container `nginx:80`.
+Mode ini memakai **Nginx di host** (bukan container).
+
+Contoh server block:
+
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+    root /var/www/bc-admin/public;
+    index index.php;
+
+    client_max_body_size 64M;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ ^/index\.php(/|$) {
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME /var/www/html/public/index.php;
+        fastcgi_param DOCUMENT_ROOT /var/www/html/public;
+        fastcgi_pass 127.0.0.1:9000;
+        internal;
+    }
+
+    location ~ \.php$ {
+        return 404;
+    }
+}
+```
+
+Reload Nginx:
+
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+Untuk HTTPS:
+
+```bash
+sudo certbot --nginx -d your-domain.com
+```
 
 ## 6) Update release manual
 
