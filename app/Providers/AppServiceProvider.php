@@ -1,0 +1,68 @@
+<?php
+
+namespace App\Providers;
+
+use Barryvdh\Debugbar\Facades\Debugbar;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\ParallelTesting;
+use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\ServiceProvider;
+use Illuminate\View\FileViewFinder;
+
+class AppServiceProvider extends ServiceProvider
+{
+    /**
+     * Register any application services.
+     */
+    public function register(): void
+    {
+        $allowedIPs = array_map('trim', explode(',', config('app.debug_allowed_ips')));
+
+        $allowedIPs = array_filter($allowedIPs);
+
+        if (empty($allowedIPs)) {
+            return;
+        }
+
+        if (in_array(Request::ip(), $allowedIPs)) {
+            Debugbar::enable();
+        } else {
+            Debugbar::disable();
+        }
+    }
+
+    /**
+     * Bootstrap any application services.
+     */
+    public function boot(): void
+    {
+        $this->sanitizeViewNamespacePaths();
+
+        ParallelTesting::setUpTestDatabase(function (string $database, int $token) {
+            Artisan::call('db:seed');
+        });
+    }
+
+    private function sanitizeViewNamespacePaths(): void
+    {
+        $finder = View::getFinder();
+
+        if (! $finder instanceof FileViewFinder) {
+            return;
+        }
+
+        foreach ($finder->getHints() as $namespace => $paths) {
+            $existingPaths = array_values(array_filter(
+                $paths,
+                static fn ($path): bool => is_string($path) && is_dir($path)
+            ));
+
+            if ($existingPaths === $paths) {
+                continue;
+            }
+
+            View::replaceNamespace($namespace, $existingPaths);
+        }
+    }
+}

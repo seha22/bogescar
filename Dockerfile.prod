@@ -1,0 +1,46 @@
+FROM node:20-alpine AS assets
+
+WORKDIR /app
+
+COPY package*.json ./
+COPY vite.config.js ./
+COPY resources ./resources
+COPY public ./public
+
+RUN npm ci && npm run build
+
+FROM php:8.3-fpm-bookworm
+
+WORKDIR /var/www/html
+
+RUN apt-get update && apt-get install -y \
+    git \
+    unzip \
+    libicu-dev \
+    libzip-dev \
+    libpng-dev \
+    libjpeg62-turbo-dev \
+    libfreetype6-dev \
+    libonig-dev \
+    libxml2-dev \
+    libcurl4-openssl-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo_mysql mbstring intl bcmath gd zip opcache \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+COPY . .
+
+RUN composer install --no-dev --optimize-autoloader --no-interaction \
+    && rm -rf node_modules tests
+
+COPY --from=assets /app/public/build ./public/build
+
+RUN chown -R www-data:www-data storage bootstrap/cache
+
+USER www-data
+
+CMD ["php-fpm"]

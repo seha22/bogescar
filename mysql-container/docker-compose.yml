@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:latest
+    container_name: dev-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: Jakarta@2026
+      MYSQL_DATABASE: bogescar_db
+      MYSQL_USER: boges
+      MYSQL_PASSWORD: Jakarta@2026
+    ports:
+      - "3306:3306"
+    volumes:
+      - dev-mysql-data:/var/lib/mysql
+
+volumes:
+  dev-mysql-data:
