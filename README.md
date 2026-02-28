@@ -64,6 +64,11 @@ Follow the [Getting Started with Bagisto](https://www.youtube.com/watch?v=s_DhQr
 
 You can browse through the Free [Live Demo](https://demo.bagisto.com/)
 
+## BogesCar Production Deployment
+
+- Docker deployment guide (Hetzner VPS): [docs/DEPLOYMENT_DOCKER_HETZNER.md](docs/DEPLOYMENT_DOCKER_HETZNER.md)
+- Auto deploy workflow: [.github/workflows/deploy-production.yml](.github/workflows/deploy-production.yml)
+
 ## ☁️ Cloud Installation via Amazon AMI
 
 You can also deploy Bagisto quickly using our pre-configured Amazon Machine Image (AMI) available on the AWS Marketplace:
