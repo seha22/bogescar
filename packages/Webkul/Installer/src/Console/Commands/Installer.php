@@ -618,14 +618,23 @@ class Installer extends Command
      */
     protected function getEnvVariable(string $key, $default = null): string|bool
     {
+        $runtimeValue = getenv($key);
+
+        if ($runtimeValue !== false && $runtimeValue !== '') {
+            return trim((string) $runtimeValue, '"');
+        }
+
         if ($data = file(base_path('.env'))) {
             foreach ($data as $line) {
                 $line = preg_replace('/\s+/', '', $line);
 
-                $rowValues = explode('=', $line);
+                $rowValues = explode('=', $line, 2);
 
                 if (strlen($line) !== 0) {
-                    if (strpos($key, $rowValues[0]) !== false) {
+                    if (
+                        isset($rowValues[0], $rowValues[1])
+                        && $rowValues[0] === $key
+                    ) {
                         return trim($rowValues[1], '"');
                     }
                 }
